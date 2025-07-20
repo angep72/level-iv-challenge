@@ -179,3 +179,6 @@ The API returns consistent error responses:
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JavaScript
 - `npm start` - Start production server
+```
+It is Okay to add reviews directly 
+
