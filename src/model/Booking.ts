@@ -1,5 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+/**
+ * Interface for Booking document in MongoDB.
+ */
 export interface IBooking extends Document {
   userId: mongoose.Types.ObjectId;
   eventId: mongoose.Types.ObjectId;
@@ -9,6 +12,9 @@ export interface IBooking extends Document {
   updatedAt: Date;
 }
 
+/**
+ * Mongoose schema for Booking collection.
+ */
 const BookingSchema: Schema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
@@ -31,7 +37,7 @@ const BookingSchema: Schema = new Schema({
     default: Date.now
   }
 }, {
-  timestamps: true
+  timestamps: true // Automatically adds createdAt and updatedAt
 });
 
 // Compound index to prevent duplicate active bookings
@@ -46,7 +52,11 @@ BookingSchema.index({ eventId: 1 });
 BookingSchema.index({ status: 1 });
 BookingSchema.index({ createdAt: -1 });
 
-// Pre-save middleware to validate booking constraints
+/**
+ * Pre-save middleware to validate booking constraints:
+ * - Prevent duplicate active bookings for the same event and user
+ * - Prevent overbooking if event is full
+ */
 BookingSchema.pre('save', async function(next) {
   if (this.isNew && this.status === 'active') {
     // Check if user already has an active booking for this event
@@ -80,7 +90,9 @@ BookingSchema.pre('save', async function(next) {
   next();
 });
 
-// Post-save middleware to update event booking count
+/**
+ * Post-save middleware to increment event's currentBookings when a booking is created.
+ */
 BookingSchema.post('save', async function(doc) {
   if (doc.status === 'active') {
     await mongoose.model('Event').findByIdAndUpdate(
@@ -90,7 +102,9 @@ BookingSchema.post('save', async function(doc) {
   }
 });
 
-// Post-findOneAndUpdate middleware to handle status changes
+/**
+ * Post-findOneAndUpdate middleware to decrement event's currentBookings when a booking is cancelled.
+ */
 BookingSchema.post('findOneAndUpdate', async function(doc) {
   if (doc && doc.status === 'cancelled') {
     await mongoose.model('Event').findByIdAndUpdate(

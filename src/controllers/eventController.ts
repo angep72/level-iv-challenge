@@ -1,10 +1,18 @@
 import { Request, Response } from 'express';
 import { Event } from "../model/index";
-import { ApiResponse, AuthRequest } from '../types';
+import { ApiResponse, AuthRequest, MongooseValidationError } from '../types';
  import mongoose from 'mongoose';
+ import { Booking } from '../model';
 
+
+/**
+ * Get all upcoming events.
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const getAllEvents = async (req: Request, res: Response) => {
   try {
+    // Find events with date in the future
     const events = await Event.find({
       date: { $gte: new Date() }
     })
@@ -17,6 +25,7 @@ export const getAllEvents = async (req: Request, res: Response) => {
       data: events
     } as ApiResponse);
   } catch (error) {
+    // Log and return server error
     console.error('Get events error:', error);
     res.status(500).json({
       success: false,
@@ -25,10 +34,16 @@ export const getAllEvents = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Get a single event by its ID.
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const getEventById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
+    // Validate event ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -36,6 +51,7 @@ export const getEventById = async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
+    // Find event by ID
     const event = await Event.findById(id)
       .populate('createdBy', 'name email');
 
@@ -52,6 +68,7 @@ export const getEventById = async (req: Request, res: Response) => {
       data: event
     } as ApiResponse);
   } catch (error) {
+    // Log and return server error
     console.error('Get event error:', error);
     res.status(500).json({
       success: false,
@@ -61,10 +78,15 @@ export const getEventById = async (req: Request, res: Response) => {
   return ;
 };
 
-
+/**
+ * Create a new event (admin only).
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const createEvent = async (req: Request, res: Response) => {
   const user = (req as unknown as AuthRequest).user;
   try {
+    // Create event with current user as creator
     const newEvent = await Event.create({ ...req.body, createdBy: user?.id });
     await newEvent.populate('createdBy', 'name email');
 
@@ -73,32 +95,46 @@ export const createEvent = async (req: Request, res: Response) => {
       message: 'Event created successfully',
       data: newEvent
     } as ApiResponse);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    // Log and handle validation errors
     console.error('Create event error:', error);
 
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map((err: any) => err.message);
+    // Narrow the error type to MongooseValidationError
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      (error as Error).name === 'ValidationError'
+    ) {
+      const validationError = error as MongooseValidationError;
+      const errors = Object.values(validationError.errors).map(err => err.message);
+
       res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors
-      } as ApiResponse);
+      } satisfies ApiResponse<null, string>);
       return;
     }
 
     res.status(500).json({
       success: false,
       message: 'Internal server error'
-    } as ApiResponse);
+    } satisfies ApiResponse);
   }
 };
 
+/**
+ * Update an event by its ID (admin only).
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const updateEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { title, description, date, location, maxCapacity, price } = req.body;
 
-    // Validate ObjectId
+    // Validate event ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -106,6 +142,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
+    // Update event and return the new document
     const event = await Event.findByIdAndUpdate(
       id,
       {
@@ -134,16 +171,25 @@ export const updateEvent = async (req: Request, res: Response) => {
       message: 'Event updated successfully',
       data: event
     } as ApiResponse);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    // Log and handle validation errors
     console.error('Update event error:', error);
     
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map((err: any) => err.message);
-      return res.status(400).json({
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      (error as Error).name === 'ValidationError'
+    ) {
+      const validationError = error as MongooseValidationError;
+      const errors = Object.values(validationError.errors).map(err => err.message);
+
+      res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors
-      } as ApiResponse);
+      } satisfies ApiResponse<null, string>);
+      return;
     }
 
     res.status(500).json({
@@ -154,11 +200,16 @@ export const updateEvent = async (req: Request, res: Response) => {
   return ;
 };
 
+/**
+ * Delete an event by its ID (admin only).
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const deleteEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Validate ObjectId
+    // Validate event ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -166,6 +217,7 @@ export const deleteEvent = async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
+    // Delete event by ID
     const event = await Event.findByIdAndDelete(id);
 
     if (!event) {
@@ -180,6 +232,7 @@ export const deleteEvent = async (req: Request, res: Response) => {
       message: 'Event deleted successfully'
     } as ApiResponse);
   } catch (error) {
+    // Log and return server error
     console.error('Delete event error:', error);
     res.status(500).json({
       success: false,
@@ -189,11 +242,16 @@ export const deleteEvent = async (req: Request, res: Response) => {
   return; 
 };
 
+/**
+ * Get all bookings for a specific event (admin only).
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const getEventBookings = async (req:Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Validate ObjectId
+    // Validate event ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -201,9 +259,7 @@ export const getEventBookings = async (req:Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Import Booking model here to avoid circular dependency
-    const { Booking } = require('../models');
-    
+    // Find bookings for the event
     const bookings = await Booking.find({
       eventId: id,
       status: 'active'
@@ -218,6 +274,7 @@ export const getEventBookings = async (req:Request, res: Response) => {
       data: bookings
     } as ApiResponse);
   } catch (error) {
+    // Log and return server error
     console.error('Get event bookings error:', error);
     res.status(500).json({
       success: false,

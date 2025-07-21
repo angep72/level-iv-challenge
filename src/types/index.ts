@@ -1,9 +1,9 @@
 export interface User {
   id: string;
   email: string;
-  password: string;
   role: 'customer' | 'admin';
-  name: string;
+  firstName: string;
+  lastName: string;
   created_at: string;
   updated_at: string;
 }
@@ -20,6 +20,10 @@ export interface Event {
   created_by: string;
   created_at: string;
   updated_at: string;
+}
+export interface Querys {
+  _id: string;
+  userId?: string;
 }
 
 export interface Booking {
@@ -40,15 +44,42 @@ export interface AuthRequest extends Request {
   };
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown, E = unknown> {
   success: boolean;
   message: string;
   data?: T;
-  errors?: any[];
+  errors?: E[];
 }
 
+
 export interface JwtPayload {
-  userId?: string;
-  email?: string;
-  role?: 'customer' | 'admin';
+  userId: string;
+  email: string;
+  role: 'customer' | 'admin';
 }
+
+
+export interface EventJSON {
+  _id: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  maxCapacity: number;
+  currentBookings: number;
+  price: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface PopulatedEvent {
+  toJSON: () => any;
+}
+
+export interface MongooseValidationError extends Error {
+  errors: {
+    [key: string]: { message: string };
+  };
+  name: 'ValidationError';
+}
+

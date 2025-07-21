@@ -1,5 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+/**
+ * Interface for Event document in MongoDB.
+ */
 export interface IEvent extends Document {
   title: string;
   description: string;
@@ -13,6 +16,9 @@ export interface IEvent extends Document {
   updatedAt: Date;
 }
 
+/**
+ * Mongoose schema for Event collection.
+ */
 const EventSchema: Schema = new Schema({
   title: {
     type: String,
@@ -30,7 +36,7 @@ const EventSchema: Schema = new Schema({
     type: Date,
     required: [true, 'Event date is required'],
     validate: {
-      validator: function(value: Date) {
+      validator: function(this: IEvent, value: Date) {
         return value > new Date();
       },
       message: 'Event date must be in the future'
@@ -69,7 +75,7 @@ const EventSchema: Schema = new Schema({
     required: [true, 'Event creator is required']
   }
 }, {
-  timestamps: true
+  timestamps: true // Automatically adds createdAt and updatedAt
 });
 
 // Indexes for better query performance
@@ -77,12 +83,14 @@ EventSchema.index({ date: 1 });
 EventSchema.index({ createdBy: 1 });
 EventSchema.index({ title: 'text', description: 'text' });
 
-// Virtual for available spots
+/**
+ * Virtual property to get available spots for the event.
+ */
 EventSchema.virtual('availableSpots').get(function(this: IEvent) {
   return this.maxCapacity - this.currentBookings;
 });
 
-// Ensure virtual fields are serialized
+// Ensure virtual fields are serialized in JSON output
 EventSchema.set('toJSON', { virtuals: true });
 
 export default mongoose.model<IEvent>('Event', EventSchema);

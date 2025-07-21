@@ -1,15 +1,22 @@
 import { Request, Response } from 'express';
 import { Booking, Event } from '../model/index';
-import { ApiResponse, AuthRequest } from '../types';
+import { ApiResponse, AuthRequest, Querys } from '../types';
 import mongoose from 'mongoose';
 
-export const createBooking = async (req:Request, res: Response) => {
-      const user = (req as unknown as AuthRequest).user;
-  try {
-    const { event_id } = req.body;
+/**
+ * Create a new booking for an event.
+ * Validates event existence, date, duplicate booking, and capacity.
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const createBooking = async (req: Request, res: Response) => {
+  const user = (req as unknown as AuthRequest).user;
 
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(event_id)) {
+  try {
+    const { eventId } = req.body;
+
+    // Validate eventId format
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid event ID'
@@ -17,7 +24,7 @@ export const createBooking = async (req:Request, res: Response) => {
     }
 
     // Check if event exists
-    const event = await Event.findById(event_id);
+    const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({
         success: false,
@@ -25,7 +32,7 @@ export const createBooking = async (req:Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Check if event is in the future
+    // Prevent booking for past events
     if (new Date(event.date) < new Date()) {
       return res.status(400).json({
         success: false,
@@ -33,10 +40,10 @@ export const createBooking = async (req:Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Check if user already has a booking for this event
+    // Prevent duplicate active bookings
     const existingBooking = await Booking.findOne({
       userId: user?.id,
-      eventId: event_id,
+      eventId: eventId,
       status: 'active'
     });
 
@@ -47,7 +54,7 @@ export const createBooking = async (req:Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Check capacity
+    // Prevent overbooking
     if (event.currentBookings >= event.maxCapacity) {
       return res.status(400).json({
         success: false,
@@ -55,10 +62,10 @@ export const createBooking = async (req:Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Create booking
+    // Create and save the booking
     const booking = new Booking({
       userId: user?.id,
-      eventId: event_id,
+      eventId: eventId,
       status: 'active',
       bookingDate: new Date()
     });
@@ -66,41 +73,49 @@ export const createBooking = async (req:Request, res: Response) => {
     await booking.save();
     await booking.populate([
       { path: 'userId', select: 'name email' },
-      { path: 'eventId', select: 'title date location price' }
+      { path: 'eventId', select: 'title date location price maxCapacity currentBookings' }
     ]);
+
+    // Manually convert booking and its populated eventId to JSON to apply virtuals
+    const bookingData = booking.toJSON();
+    if (booking.eventId && typeof booking.eventId === 'object' && 'toJSON' in booking.eventId) {
+      bookingData.eventId = (booking.eventId as any).toJSON();
+    }
 
     res.status(201).json({
       success: true,
       message: 'Booking created successfully',
-      data: booking
+      data: bookingData
     } as ApiResponse);
-  } catch (error: any) {
-    console.error('Create booking error:', error);
-    
-    // Handle validation errors
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map((err: any) => err.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors
-      } as ApiResponse);
-    }
+  }catch (error: unknown) {
+    if (error instanceof Error) {
+      // Log error and handle validation/booking errors
+      console.error('Create booking error:', error);
 
-    // Handle duplicate booking error
-    if (error.message && error.message.includes('already has an active booking')) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      } as ApiResponse);
-    }
+      if ('name' in error && error.name === 'ValidationError') {
+        const validationErr = error as any; // or create a proper type
+        const errors = Object.values(validationErr.errors).map((err: any) => err.message);
 
-    // Handle capacity error
-    if (error.message && error.message.includes('fully booked')) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      } as ApiResponse);
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors
+        } as ApiResponse);
+      }
+
+      if (error.message.includes('already has an active booking')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        } as ApiResponse);
+      }
+
+      if (error.message.includes('fully booked')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        } as ApiResponse);
+      }
     }
 
     res.status(500).json({
@@ -108,14 +123,20 @@ export const createBooking = async (req:Request, res: Response) => {
       message: 'Internal server error'
     } as ApiResponse);
   }
-  return
+  return;
 };
 
+/**
+ * Get all bookings for the authenticated user.
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const getUserBookings = async (req: Request, res: Response) => {
   try {
     const user = (req as unknown as AuthRequest).user;
     const user_id = user?.id;
 
+    // Find bookings for the user
     const bookings = await Booking.find({ userId: user_id })
       .populate('eventId', 'title description date location price')
       .sort({ createdAt: -1 });
@@ -126,6 +147,7 @@ export const getUserBookings = async (req: Request, res: Response) => {
       data: bookings
     } as ApiResponse);
   } catch (error) {
+    // Log and return server error
     console.error('Get user bookings error:', error);
     res.status(500).json({
       success: false,
@@ -134,13 +156,18 @@ export const getUserBookings = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Cancel a booking by ID for the authenticated user.
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const cancelBooking = async (req: Request, res: Response) => {
-const user = (req as unknown as AuthRequest).user;
+  const user = (req as unknown as AuthRequest).user;
 
   try {
     const { id } = req.params;
 
-    // Validate ObjectId
+    // Validate booking ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -148,7 +175,7 @@ const user = (req as unknown as AuthRequest).user;
       } as ApiResponse);
     }
 
-    // Find booking
+    // Find active booking for user
     const booking = await Booking.findOne({
       _id: id,
       userId: user?.id,
@@ -162,7 +189,7 @@ const user = (req as unknown as AuthRequest).user;
       } as ApiResponse);
     }
 
-    // Update booking status
+    // Update booking status to cancelled
     booking.status = 'cancelled';
     await booking.save();
 
@@ -177,23 +204,29 @@ const user = (req as unknown as AuthRequest).user;
       message: 'Booking cancelled successfully'
     } as ApiResponse);
   } catch (error) {
+    // Log and return server error
     console.error('Cancel booking error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
     } as ApiResponse);
   }
-  return
+  return;
 };
 
+/**
+ * Get a booking by ID for the authenticated user (or admin).
+ * @param req - Express request object
+ * @param res - Express response object
+ */
 export const getBookingById = async (req:Request, res: Response) => {
-          const user = (req as unknown as AuthRequest).user;
+  const user = (req as unknown as AuthRequest).user;
   try {
     const { id } = req.params;
     const user_id = user?.id;
-    const user_role = user?.id
+    const user_role = user?.id; // Note: this should probably be user?.role
 
-    // Validate ObjectId
+    // Validate booking ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -202,11 +235,12 @@ export const getBookingById = async (req:Request, res: Response) => {
     }
 
     // Build query based on user role
-    const query: any = { _id: id };
+    const query: Querys = { _id: id };
     if (user_role !== 'admin') {
       query.userId = user_id;
     }
 
+    // Find booking with populated user and event
     const booking = await Booking.findOne(query)
       .populate('userId', 'name email')
       .populate('eventId', 'title description date location price');
@@ -224,6 +258,7 @@ export const getBookingById = async (req:Request, res: Response) => {
       data: booking
     } as ApiResponse);
   } catch (error) {
+    // Log and return server error
     console.error('Get booking error:', error);
     res.status(500).json({
       success: false,

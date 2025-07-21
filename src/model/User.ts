@@ -1,14 +1,22 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+/**
+ * Interface for User document in MongoDB.
+ */
 export interface IUser extends Document {
+  _id:string;
   email: string;
-  password: string;
-  name: string;
+  password : string;
+  firstName:string;
+  lastName:string 
   role: 'customer' | 'admin';
   createdAt: Date;
   updatedAt: Date;
 }
 
+/**
+ * Mongoose schema for User collection.
+ */
 const UserSchema: Schema = new Schema({
   email: {
     type: String,
@@ -16,14 +24,21 @@ const UserSchema: Schema = new Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+    index: true, 
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'] // Email validation regex
   },
   password: {
     type: String,
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters long']
   },
-  name: {
+  firstName: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true,
+    minlength: [2, 'Name must be at least 2 characters long']
+  },
+  lastName: {
     type: String,
     required: [true, 'Name is required'],
     trim: true,
@@ -34,16 +49,9 @@ const UserSchema: Schema = new Schema({
     enum: ['customer', 'admin'],
     default: 'customer'
   }
-}, {
-  timestamps: true,
-//   toJSON: {
-//     transform: function(doc, ret) {
-//       delete ret.password;
-//       return ret;
-//     }
-//   }
+}, 
+ {
+  timestamps: true, // Automatically adds createdAt and updatedAt
 });
-
-// UserSchema.index({ email: 1 });
 
 export default mongoose.model<IUser>('User', UserSchema);

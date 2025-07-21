@@ -1,14 +1,8 @@
-// src/middleware/auth.ts
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { User, IUser } from '../model/index'; // Import both Model and Interface
 
-// --- Type Definitions ---
-interface JwtPayload {
-  userId: string;
-  email: string;
-  role: string;
-}
+
 
 interface AuthRequest extends Request {
   user?: {
@@ -18,13 +12,20 @@ interface AuthRequest extends Request {
   };
 }
 
+/**
+ * Middleware to authenticate JWT token and attach user to request.
+ * @param req - Express request object (with user property)
+ * @param res - Express response object
+ * @param next - Express next function
+ */
 export const authenticateToken = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  // Get token from Authorization header
   const authHeader = req.get('authorization');
-  const token = authHeader?.split(' ')[1];
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
   if (!token) {
     res.status(401).json({ success: false, message: 'Access token required' });
@@ -38,6 +39,7 @@ export const authenticateToken = async (
   }
 
   try {
+    // Verify JWT and fetch user from DB
     const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
     const user = await User.findById(decoded.userId).select('_id email role').lean() as IUser | null;
 
@@ -46,21 +48,27 @@ export const authenticateToken = async (
       return;
     }
 
+    // Attach user info to request
     req.user = {
-      id: user._id as string, // Now properly typed
+      id: user._id.toString(), 
       email: user.email,
       role: user.role,
     };
 
     next();
   } catch (err) {
-    res.status(403).json({ success: false, message: 'Invalid or expired token' });
+    res.status(403).json({ success: false, message: 'Invalid or expired token',err });
   }
 };
 
-
+/**
+ * Middleware to require a user role for access.
+ * @param allowedRoles - Array of allowed roles
+ * @returns Express middleware function
+ */
 export const requireRole = (allowedRoles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
+    // Check if user exists and has required role
     if (!req.user || !allowedRoles.includes(req.user.role)) {
       res.status(403).json({ success: false, message: 'Insufficient permissions' });
       return;
