@@ -79,7 +79,7 @@ const EventDetail: React.FC = () => {
     }
 
     bookingMutation.mutate({
-      eventId: id!,
+      event_id: id!,
       ticketCount,
     });
   };

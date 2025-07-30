@@ -4,6 +4,7 @@ export interface IBooking extends Document {
   userId: mongoose.Types.ObjectId;
   eventId: mongoose.Types.ObjectId;
   status: 'active' | 'cancelled';
+  ticketCount: number;
   bookingDate: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -20,6 +21,12 @@ const BookingSchema: Schema = new Schema({
     ref: 'Event',
     required: [true, 'Event ID is required']
   },
+  ticketCount: {
+    type: Number,
+    required: [true, 'Ticket count is required'],
+    min: [1, 'At least one ticket must be booked'],
+    default: 1
+  },
   status: {
     type: String,
     enum: ['active', 'cancelled'],
@@ -35,7 +42,7 @@ const BookingSchema: Schema = new Schema({
 });
 
 // Compound index to prevent duplicate active bookings
-BookingSchema.index({ userId: 1, eventId: 1, status: 1 }, { 
+BookingSchema.index({ userId: 1, eventId: 1, status: 1 }, {
   unique: true,
   partialFilterExpression: { status: 'active' }
 });
@@ -47,9 +54,8 @@ BookingSchema.index({ status: 1 });
 BookingSchema.index({ createdAt: -1 });
 
 // Pre-save middleware to validate booking constraints
-BookingSchema.pre('save', async function(next) {
+BookingSchema.pre('save', async function (next) {
   if (this.isNew && this.status === 'active') {
-    // Check if user already has an active booking for this event
     const existingBooking = await mongoose.model('Booking').findOne({
       userId: this.userId,
       eventId: this.eventId,
@@ -58,44 +64,41 @@ BookingSchema.pre('save', async function(next) {
     });
 
     if (existingBooking) {
-      const error = new Error('User already has an active booking for this event');
-      return next(error);
+      return next(new Error('User already has an active booking for this event'));
     }
 
-    // Check if event has capacity
     const Event = mongoose.model('Event');
     const event = await Event.findById(this.eventId);
-    
+
     if (!event) {
-      const error = new Error('Event not found');
-      return next(error);
+      return next(new Error('Event not found'));
     }
 
-    if (event.currentBookings >= event.maxCapacity) {
-      const error = new Error('Event is fully booked');
-      return next(error);
+    // ✅ Updated capacity check with ticketCount
+    if ((event.currentBookings || 0) + this.ticketCount > event.maxCapacity) {
+      return next(new Error('Not enough tickets available'));
     }
   }
-  
+
   next();
 });
 
 // Post-save middleware to update event booking count
-BookingSchema.post('save', async function(doc) {
+BookingSchema.post('save', async function (doc) {
   if (doc.status === 'active') {
     await mongoose.model('Event').findByIdAndUpdate(
       doc.eventId,
-      { $inc: { currentBookings: 1 } }
+      { $inc: { currentBookings: doc.ticketCount } }
     );
   }
 });
 
 // Post-findOneAndUpdate middleware to handle status changes
-BookingSchema.post('findOneAndUpdate', async function(doc) {
+BookingSchema.post('findOneAndUpdate', async function (doc) {
   if (doc && doc.status === 'cancelled') {
     await mongoose.model('Event').findByIdAndUpdate(
       doc.eventId,
-      { $inc: { currentBookings: -1 } }
+      { $inc: { currentBookings: -doc.ticketCount } }
     );
   }
 });

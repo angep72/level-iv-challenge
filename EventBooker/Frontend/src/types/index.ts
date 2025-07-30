@@ -62,7 +62,7 @@ export interface CreateEventData {
  * Data required to create a new booking.
  */
 export interface CreateBookingData {
-  eventId: string;
+  event_id: string;
   ticketCount: number;
 }
 

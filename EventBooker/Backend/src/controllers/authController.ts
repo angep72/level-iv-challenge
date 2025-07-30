@@ -23,7 +23,7 @@ interface JwtPayload {
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, name, role = 'customer' } = req.body;
+    const { email, password, lastName,firstName, role = 'customer' } = req.body;
 
     const existingUser = await User.findOne({ email }).select('_id');
     if (existingUser) {
@@ -39,7 +39,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const newUser = new User({
       email,
       password: hashedPassword,
-      name,
+      firstName,
+      lastName,
       role
     });
 
@@ -58,7 +59,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         user: {
           id: savedUser._id,
           email: savedUser.email,
-          name: savedUser.name,
+         firstName:savedUser.firstName,
+         lastName:savedUser.lastName,
           role: savedUser.role
         },
         token
@@ -111,7 +113,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         user: {
           id: user._id,
           email: user.email,
-          name: user.name,
+          firstName:user.firstName,
+          lastName:user.lastName,
           role: user.role
         },
         token

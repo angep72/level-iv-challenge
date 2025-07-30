@@ -3,16 +3,26 @@ import { Booking, Event } from "../model/index";
 import { ApiResponse, AuthRequest } from "../types";
 import mongoose from "mongoose";
 
+// Create Booking
 export const createBooking = async (req: Request, res: Response) => {
   const user = (req as unknown as AuthRequest).user;
   try {
-    const { event_id } = req.body;
+    const { event_id, ticketCount } = req.body;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(event_id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid event ID",
+      } as ApiResponse);
+    }
+
+    // Validate ticket count
+    const parsedTicketCount = Number(ticketCount);
+    if (!parsedTicketCount || parsedTicketCount < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ticket count",
       } as ApiResponse);
     }
 
@@ -47,11 +57,12 @@ export const createBooking = async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Check capacity
-    if (event.currentBookings >= event.maxCapacity) {
+    // Check event capacity
+    const current = event.currentBookings || 0;
+    if (current + parsedTicketCount > event.maxCapacity) {
       return res.status(400).json({
         success: false,
-        message: "Event is fully booked",
+        message: "Not enough tickets available",
       } as ApiResponse);
     }
 
@@ -61,6 +72,7 @@ export const createBooking = async (req: Request, res: Response) => {
       eventId: event_id,
       status: "active",
       bookingDate: new Date(),
+      ticketCount: parsedTicketCount,
     });
 
     await booking.save();
@@ -80,7 +92,6 @@ export const createBooking = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Create booking error:", error);
 
-    // Handle validation errors
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err: any) => err.message);
       return res.status(400).json({
@@ -90,7 +101,6 @@ export const createBooking = async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Handle duplicate booking error
     if (
       error.message &&
       error.message.includes("already has an active booking")
@@ -101,7 +111,6 @@ export const createBooking = async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Handle capacity error
     if (error.message && error.message.includes("fully booked")) {
       return res.status(400).json({
         success: false,
@@ -117,6 +126,7 @@ export const createBooking = async (req: Request, res: Response) => {
   return;
 };
 
+// Get User Bookings
 export const getUserBookings = async (req: Request, res: Response) => {
   try {
     const user = (req as unknown as AuthRequest).user;
@@ -140,6 +150,7 @@ export const getUserBookings = async (req: Request, res: Response) => {
   }
 };
 
+// Cancel Booking
 export const cancelBooking = async (req: Request, res: Response) => {
   const user = (req as unknown as AuthRequest).user;
 
@@ -172,9 +183,9 @@ export const cancelBooking = async (req: Request, res: Response) => {
     booking.status = "cancelled";
     await booking.save();
 
-    // Decrease event booking count
+    // Decrease event booking count by ticketCount
     await Event.findByIdAndUpdate(booking.eventId, {
-      $inc: { currentBookings: -1 },
+      $inc: { currentBookings: -booking.ticketCount },
     });
 
     res.json({
@@ -191,14 +202,14 @@ export const cancelBooking = async (req: Request, res: Response) => {
   return;
 };
 
+// Get Booking By ID
 export const getBookingById = async (req: Request, res: Response) => {
   const user = (req as unknown as AuthRequest).user;
   try {
     const { id } = req.params;
     const user_id = user?.id;
-    const user_role = user?.id;
+    const user_role = user?.role;
 
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -206,7 +217,6 @@ export const getBookingById = async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Build query based on user role
     const query: any = { _id: id };
     if (user_role !== "admin") {
       query.userId = user_id;
