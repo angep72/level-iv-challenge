@@ -10,11 +10,12 @@ export const getAllEvents = async (req: Request, res: Response) => {
     })
     .populate('createdBy', 'name email')
     .sort({ date: 1 });
+    const eventsWithVirtuals = events.map(event => event.toJSON());
 
     res.json({
       success: true,
       message: 'Events fetched successfully',
-      data: events
+      data: eventsWithVirtuals
     } as ApiResponse);
   } catch (error) {
     console.error('Get events error:', error);
@@ -49,7 +50,7 @@ export const getEventById = async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Event fetched successfully',
-      data: event
+      data: event.toJSON()
     } as ApiResponse);
   } catch (error) {
     console.error('Get event error:', error);
@@ -71,7 +72,7 @@ export const createEvent = async (req: Request, res: Response) => {
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
-      data: newEvent
+      data: newEvent.toJSON()
     } as ApiResponse);
   } catch (error: any) {
     console.error('Create event error:', error);

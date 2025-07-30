@@ -8,14 +8,14 @@ import {
   deleteEvent
 } from '../controllers/eventController';
 import { authenticateToken, requireRole } from '../middleware/auth';
-import { validateEvent, validateUUID } from '../middleware/validation';
+import { validateEvent, validateMongoIdParam } from '../middleware/validation';
 
 const router = Router();
 
 router.get('/', getAllEvents);
 
 
-router.get('/:id', validateUUID, getEventById);
+router.get('/:id', validateMongoIdParam, getEventById);
 
 router.post(
   '/',
@@ -30,7 +30,7 @@ router.put(
   '/:id',
   authenticateToken,
   requireRole(['admin']),
-  validateUUID,
+  validateMongoIdParam,
   validateEvent,
   updateEvent
 );
@@ -40,7 +40,7 @@ router.delete(
   '/:id',
   authenticateToken,
   requireRole(['admin']),
-  validateUUID,
+  validateMongoIdParam,
   deleteEvent
 );
 
@@ -49,7 +49,7 @@ router.get(
   '/:id/bookings',
   authenticateToken,
   requireRole(['admin']),
-  validateUUID,
+  validateMongoIdParam,
   getEventBookings
 );
 

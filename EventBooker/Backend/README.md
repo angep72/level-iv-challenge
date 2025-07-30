@@ -5,16 +5,19 @@ A comprehensive Node.js REST API for event booking management with authenticatio
 ## Features
 
 - **Authentication & Authorization**
+
   - JWT-based authentication
   - Role-based access control (Customer/Admin)
   - Secure password hashing with bcrypt
 
 - **Event Management**
+
   - Create, read, update events (Admin only)
   - Public event listing with upcoming events
   - Event capacity management
 
 - **Booking System**
+
   - Create and cancel bookings
   - View user's booking history
   - Prevent duplicate bookings and overbooking
@@ -35,10 +38,12 @@ A comprehensive Node.js REST API for event booking management with authenticatio
 ## API Endpoints
 
 ### Authentication (Public)
+
 - `POST /auth/register` - Register a new user
 - `POST /auth/login` - Login and get JWT token
 
 ### Events
+
 - `GET /events` - List all upcoming events (Public)
 - `GET /events/:id` - Get event details (Public)
 - `POST /events` - Create new event (Admin only)
@@ -46,6 +51,7 @@ A comprehensive Node.js REST API for event booking management with authenticatio
 - `GET /events/:id/bookings` - View event bookings (Admin only)
 
 ### Bookings (Protected)
+
 - `POST /bookings` - Create booking (Customer/Admin)
 - `GET /bookings` - View user's bookings (Customer/Admin)
 - `PUT /bookings/:id` - Cancel booking (Customer/Admin)
@@ -53,12 +59,14 @@ A comprehensive Node.js REST API for event booking management with authenticatio
 ## Setup
 
 1. **Clone and Install**
+
    ```bash
    npm install
    ```
 
 2. **Environment Variables**
    Copy `.env.example` to `.env` and configure:
+
    ```
    SUPABASE_URL=your_supabase_url
    SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -69,6 +77,7 @@ A comprehensive Node.js REST API for event booking management with authenticatio
    ```
 
 3. **Database Setup**
+
    - Set up Supabase project
    - Run the migration file in `supabase/migrations/`
 
@@ -80,6 +89,7 @@ A comprehensive Node.js REST API for event booking management with authenticatio
 ## Usage Examples
 
 ### Register a User
+
 ```bash
 curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
@@ -92,6 +102,7 @@ curl -X POST http://localhost:3000/auth/register \
 ```
 
 ### Login
+
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
@@ -102,6 +113,7 @@ curl -X POST http://localhost:3000/auth/login \
 ```
 
 ### Create Event (Admin)
+
 ```bash
 curl -X POST http://localhost:3000/events \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
@@ -111,12 +123,13 @@ curl -X POST http://localhost:3000/events \
     "description": "Annual technology conference",
     "date": "2024-12-01T10:00:00Z",
     "location": "Convention Center",
-    "max_capacity": 100,
+    "capacity": 100,
     "price": 99.99
   }'
 ```
 
 ### Book Event
+
 ```bash
 curl -X POST http://localhost:3000/bookings \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
@@ -129,6 +142,7 @@ curl -X POST http://localhost:3000/bookings \
 ## Database Schema
 
 ### Users Table
+
 - `id` (UUID, Primary Key)
 - `email` (Unique)
 - `password` (Hashed)
@@ -137,15 +151,17 @@ curl -X POST http://localhost:3000/bookings \
 - `created_at`, `updated_at`
 
 ### Events Table
+
 - `id` (UUID, Primary Key)
 - `title`, `description`, `location`
 - `date` (Event date/time)
-- `max_capacity`, `current_bookings`
+- `capacity`, `current_bookings`
 - `price`
 - `created_by` (Foreign Key to Users)
 - `created_at`, `updated_at`
 
 ### Bookings Table
+
 - `id` (UUID, Primary Key)
 - `user_id` (Foreign Key to Users)
 - `event_id` (Foreign Key to Events)
@@ -166,6 +182,7 @@ curl -X POST http://localhost:3000/bookings \
 ## Error Handling
 
 The API returns consistent error responses:
+
 ```json
 {
   "success": false,
@@ -177,5 +194,3 @@ The API returns consistent error responses:
 ## Development
 
 - `npm run dev` - Start development server with hot reload
-
-

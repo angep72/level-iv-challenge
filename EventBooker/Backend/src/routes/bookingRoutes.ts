@@ -7,7 +7,7 @@ import {
   getUserBookings
 } from "../controllers/bookingController"
 import { authenticateToken, requireRole } from '../middleware/auth';
-import { validateBooking, validateUUID } from '../middleware/validation';
+import { validateBooking, validateMongoIdParam } from '../middleware/validation';
 
 const router = Router();
 
@@ -45,7 +45,7 @@ router.get(
   '/:id',
   authenticateToken,
   requireRole(['customer', 'admin']),
-  validateUUID,
+  validateMongoIdParam,
   getBookingById
 );
 
@@ -58,7 +58,7 @@ router.put(
   '/:id',
   authenticateToken,
   requireRole(['customer', 'admin']),
-  validateUUID,
+  validateMongoIdParam,
   cancelBooking
 );
 
