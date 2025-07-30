@@ -193,18 +193,9 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         </div>
 
         <div>
-          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
-            Image URL (Optional)
-          </label>
-          <input
-            {...register('imageUrl')}
-            type="url"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="https://example.com/image.jpg"
-          />
           {errors.imageUrl && (
             <p className="mt-1 text-sm text-red-600">{errors.imageUrl.message}</p>
-          )}
+          )} 
         </div>
 
         <div className="flex gap-4">
