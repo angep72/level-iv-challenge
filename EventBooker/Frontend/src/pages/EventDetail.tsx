@@ -160,7 +160,7 @@ const EventDetail: React.FC = () => {
                 </h1>
                 <div className="flex items-center text-2xl font-semibold text-emerald-600">
                   <DollarSign size={24} />
-                  <span>{event.price === 0 ? "Free" : `$${event.price}`}</span>
+                  <span>{event.price === 0 ? "Free" : `${event.price}`}</span>
                 </div>
               </div>
 
