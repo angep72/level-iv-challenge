@@ -8,7 +8,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const index_1 = require("../model/index");
 const authenticateToken = async (req, res, next) => {
     const authHeader = req.get('authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+    const token = authHeader?.split(' ')[1];
     if (!token) {
         res.status(401).json({ success: false, message: 'Access token required' });
         return;
@@ -26,14 +26,14 @@ const authenticateToken = async (req, res, next) => {
             return;
         }
         req.user = {
-            id: user._id.toString(),
+            id: user._id,
             email: user.email,
             role: user.role,
         };
         next();
     }
     catch (err) {
-        res.status(403).json({ success: false, message: 'Invalid or expired token', err });
+        res.status(403).json({ success: false, message: 'Invalid or expired token' });
     }
 };
 exports.authenticateToken = authenticateToken;

@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEventBookings = exports.deleteEvent = exports.updateEvent = exports.createEvent = exports.getEventById = exports.getAllEvents = void 0;
 const index_1 = require("../model/index");
 const mongoose_1 = __importDefault(require("mongoose"));
-const model_1 = require("../model");
 const getAllEvents = async (req, res) => {
     try {
         const events = await index_1.Event.find({
@@ -14,10 +13,11 @@ const getAllEvents = async (req, res) => {
         })
             .populate('createdBy', 'name email')
             .sort({ date: 1 });
+        const eventsWithVirtuals = events.map(event => event.toJSON());
         res.json({
             success: true,
             message: 'Events fetched successfully',
-            data: events
+            data: eventsWithVirtuals
         });
     }
     catch (error) {
@@ -49,7 +49,7 @@ const getEventById = async (req, res) => {
         res.json({
             success: true,
             message: 'Event fetched successfully',
-            data: event
+            data: event.toJSON()
         });
     }
     catch (error) {
@@ -70,17 +70,13 @@ const createEvent = async (req, res) => {
         res.status(201).json({
             success: true,
             message: 'Event created successfully',
-            data: newEvent
+            data: newEvent.toJSON()
         });
     }
     catch (error) {
         console.error('Create event error:', error);
-        if (typeof error === 'object' &&
-            error !== null &&
-            'name' in error &&
-            error.name === 'ValidationError') {
-            const validationError = error;
-            const errors = Object.values(validationError.errors).map(err => err.message);
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map((err) => err.message);
             res.status(400).json({
                 success: false,
                 message: 'Validation failed',
@@ -130,18 +126,13 @@ const updateEvent = async (req, res) => {
     }
     catch (error) {
         console.error('Update event error:', error);
-        if (typeof error === 'object' &&
-            error !== null &&
-            'name' in error &&
-            error.name === 'ValidationError') {
-            const validationError = error;
-            const errors = Object.values(validationError.errors).map(err => err.message);
-            res.status(400).json({
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map((err) => err.message);
+            return res.status(400).json({
                 success: false,
                 message: 'Validation failed',
                 errors
             });
-            return;
         }
         res.status(500).json({
             success: false,
@@ -191,7 +182,8 @@ const getEventBookings = async (req, res) => {
                 message: 'Invalid event ID'
             });
         }
-        const bookings = await model_1.Booking.find({
+        const { Booking } = require('../models');
+        const bookings = await Booking.find({
             eventId: id,
             status: 'active'
         })

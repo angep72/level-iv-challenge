@@ -1,6 +1,5 @@
 import mongoose, { Document } from 'mongoose';
 export interface IUser extends Document {
-    _id: string;
     email: string;
     password: string;
     firstName: string;
@@ -10,7 +9,7 @@ export interface IUser extends Document {
     updatedAt: Date;
 }
 declare const _default: mongoose.Model<IUser, {}, {}, {}, mongoose.Document<unknown, {}, IUser, {}> & IUser & Required<{
-    _id: string;
+    _id: unknown;
 }> & {
     __v: number;
 }, any>;

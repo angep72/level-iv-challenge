@@ -45,6 +45,12 @@ const BookingSchema = new mongoose_1.Schema({
         ref: 'Event',
         required: [true, 'Event ID is required']
     },
+    ticketCount: {
+        type: Number,
+        required: [true, 'Ticket count is required'],
+        min: [1, 'At least one ticket must be booked'],
+        default: 1
+    },
     status: {
         type: String,
         enum: ['active', 'cancelled'],
@@ -75,30 +81,27 @@ BookingSchema.pre('save', async function (next) {
             _id: { $ne: this._id }
         });
         if (existingBooking) {
-            const error = new Error('User already has an active booking for this event');
-            return next(error);
+            return next(new Error('User already has an active booking for this event'));
         }
         const Event = mongoose_1.default.model('Event');
         const event = await Event.findById(this.eventId);
         if (!event) {
-            const error = new Error('Event not found');
-            return next(error);
+            return next(new Error('Event not found'));
         }
-        if (event.currentBookings >= event.maxCapacity) {
-            const error = new Error('Event is fully booked');
-            return next(error);
+        if ((event.currentBookings || 0) + this.ticketCount > event.maxCapacity) {
+            return next(new Error('Not enough tickets available'));
         }
     }
     next();
 });
 BookingSchema.post('save', async function (doc) {
     if (doc.status === 'active') {
-        await mongoose_1.default.model('Event').findByIdAndUpdate(doc.eventId, { $inc: { currentBookings: 1 } });
+        await mongoose_1.default.model('Event').findByIdAndUpdate(doc.eventId, { $inc: { currentBookings: doc.ticketCount } });
     }
 });
 BookingSchema.post('findOneAndUpdate', async function (doc) {
     if (doc && doc.status === 'cancelled') {
-        await mongoose_1.default.model('Event').findByIdAndUpdate(doc.eventId, { $inc: { currentBookings: -1 } });
+        await mongoose_1.default.model('Event').findByIdAndUpdate(doc.eventId, { $inc: { currentBookings: -doc.ticketCount } });
     }
 });
 exports.default = mongoose_1.default.model('Booking', BookingSchema);

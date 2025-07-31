@@ -3,6 +3,7 @@ export interface IEvent extends Document {
     title: string;
     description: string;
     date: Date;
+    imageUrl?: string;
     location: string;
     maxCapacity: number;
     currentBookings: number;

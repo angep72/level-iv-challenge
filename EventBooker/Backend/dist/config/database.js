@@ -7,7 +7,7 @@ exports.disconnectDatabase = exports.connectDatabase = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:3000/booking';
+const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/event-booking';
 const connectDatabase = async () => {
     try {
         await mongoose_1.default.connect(mongoUri);

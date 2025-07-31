@@ -41,6 +41,11 @@ const EventSchema = new mongoose_1.Schema({
         trim: true,
         minlength: [3, 'Title must be at least 3 characters long']
     },
+    imageUrl: {
+        type: String,
+        required: false,
+        trim: true
+    },
     description: {
         type: String,
         required: [true, 'Event description is required'],

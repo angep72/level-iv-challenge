@@ -9,19 +9,19 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const index_1 = require("../model/index");
 dotenv_1.default.config();
-const jwtSecret = process.env.JWT_SECRET ?? "";
-const jwtExpiresIn = process.env.JWT_EXPIRES_IN ?? "1h";
+const jwtSecret = process.env.JWT_SECRET ?? '';
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN ?? '1h';
 if (!jwtSecret) {
-    throw new Error("JWT_SECRET environment variable is not defined.");
+    throw new Error('JWT_SECRET environment variable is not defined.');
 }
 const register = async (req, res) => {
     try {
-        const { email, password, firstName, lastName, role = "customer", } = req.body;
-        const existingUser = await index_1.User.findOne({ email }).select("_id");
+        const { email, password, lastName, firstName, role = 'customer' } = req.body;
+        const existingUser = await index_1.User.findOne({ email }).select('_id');
         if (existingUser) {
             res.status(400).json({
                 success: false,
-                message: "User already exists",
+                message: 'User already exists'
             });
             return;
         }
@@ -31,34 +31,30 @@ const register = async (req, res) => {
             password: hashedPassword,
             firstName,
             lastName,
-            role,
+            role
         });
         const savedUser = await newUser.save();
-        const token = jsonwebtoken_1.default.sign({
-            userId: savedUser._id,
-            email: savedUser.email,
-            role: savedUser.role,
-        }, jwtSecret, { expiresIn: jwtExpiresIn });
+        const token = jsonwebtoken_1.default.sign({ userId: savedUser._id, email: savedUser.email, role: savedUser.role }, jwtSecret, { expiresIn: jwtExpiresIn });
         res.status(201).json({
             success: true,
-            message: "User registered successfully",
+            message: 'User registered successfully',
             data: {
                 user: {
                     id: savedUser._id,
                     email: savedUser.email,
-                    firstName: savedUser.lastName,
-                    lastName: savedUser.firstName,
-                    role: savedUser.role,
+                    firstName: savedUser.firstName,
+                    lastName: savedUser.lastName,
+                    role: savedUser.role
                 },
-                token,
-            },
+                token
+            }
         });
     }
     catch (error) {
-        console.error("Registration error:", error);
+        console.error('Registration error:', error);
         res.status(500).json({
             success: false,
-            message: "Internal server error",
+            message: 'Internal server error'
         });
     }
 };
@@ -70,7 +66,7 @@ const login = async (req, res) => {
         if (!user) {
             res.status(401).json({
                 success: false,
-                message: "Invalid credentials",
+                message: 'Invalid credentials'
             });
             return;
         }
@@ -78,31 +74,31 @@ const login = async (req, res) => {
         if (!isValidPassword) {
             res.status(401).json({
                 success: false,
-                message: "Invalid credentials",
+                message: 'Invalid credentials'
             });
             return;
         }
         const token = jsonwebtoken_1.default.sign({ userId: user._id, email: user.email, role: user.role }, jwtSecret, { expiresIn: jwtExpiresIn });
         res.json({
             success: true,
-            message: "Login successful",
+            message: 'Login successful',
             data: {
                 user: {
                     id: user._id,
                     email: user.email,
                     firstName: user.firstName,
                     lastName: user.lastName,
-                    role: user.role,
+                    role: user.role
                 },
-                token,
-            },
+                token
+            }
         });
     }
     catch (error) {
-        console.error("Login error:", error);
+        console.error('Login error:', error);
         res.status(500).json({
             success: false,
-            message: "Internal server error",
+            message: 'Internal server error'
         });
     }
 };

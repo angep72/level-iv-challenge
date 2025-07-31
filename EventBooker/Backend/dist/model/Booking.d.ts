@@ -3,6 +3,7 @@ export interface IBooking extends Document {
     userId: mongoose.Types.ObjectId;
     eventId: mongoose.Types.ObjectId;
     status: 'active' | 'cancelled';
+    ticketCount: number;
     bookingDate: Date;
     createdAt: Date;
     updatedAt: Date;
