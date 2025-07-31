@@ -4,6 +4,7 @@ export interface IEvent extends Document {
   title: string;
   description: string;
   date: Date;
+  imageUrl?: string;
   location: string;
   maxCapacity: number;
   currentBookings: number;
@@ -20,6 +21,12 @@ const EventSchema: Schema = new Schema({
     trim: true,
     minlength: [3, 'Title must be at least 3 characters long']
   },
+    imageUrl: {
+  type: String,
+  required:false, 
+  trim: true
+},
+
   description: {
     type: String,
     required: [true, 'Event description is required'],
