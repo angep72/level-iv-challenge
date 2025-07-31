@@ -168,7 +168,7 @@ const EventDetail: React.FC = () => {
                 {canBook && (
                   <button
                     onClick={() => setIsBookingModalOpen(true)}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium"
                   >
                     Book Tickets
                   </button>
@@ -196,7 +196,7 @@ const EventDetail: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="flex items-center gap-3">
-                <Calendar className="text-blue-600" size={24} />
+                <Calendar className="text-orange-600" size={24} />
                 <div>
                   <p className="text-sm font-medium text-gray-500">
                     Date & Time
@@ -206,7 +206,7 @@ const EventDetail: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <MapPin className="text-blue-600" size={24} />
+                <MapPin className="text-orange-600" size={24} />
                 <div>
                   <p className="text-sm font-medium text-gray-500">Location</p>
                   <p className="text-gray-900">{event.location}</p>
@@ -214,7 +214,7 @@ const EventDetail: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <Users className="text-blue-600" size={24} />
+                <Users className="text-orange-600" size={24} />
                 <div>
                   <p className="text-sm font-medium text-gray-500">
                     Availability
@@ -251,7 +251,7 @@ const EventDetail: React.FC = () => {
                 !isEventFull &&
                 isAuthenticated &&
                 user?.role === "admin" && (
-                  <span className="px-4 py-2 bg-blue-100 text-blue-600 rounded-full font-medium">
+                  <span className="px-4 py-2 bg-orange-100 text-orange-600 rounded-full font-medium">
                     Admin View
                   </span>
                 )}
@@ -260,7 +260,7 @@ const EventDetail: React.FC = () => {
                   Please{" "}
                   <button
                     onClick={() => navigate(ROUTES.LOGIN)}
-                    className="text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-orange-600 hover:text-orange-700 font-medium"
                   >
                     login
                   </button>{" "}
@@ -286,7 +286,7 @@ const EventDetail: React.FC = () => {
             <select
               value={ticketCount}
               onChange={(e) => setTicketCount(Number(e.target.value))}
-              className="w-full px-3  py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3  py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500"
             >
               {Array.from(
                 { length: Math.min(event.availableSpots, 10) },
@@ -318,7 +318,7 @@ const EventDetail: React.FC = () => {
             <button
               onClick={handleBooking}
               disabled={bookingMutation.isPending}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
               {bookingMutation.isPending ? (
                 <LoadingSpinner size="sm" />
@@ -370,7 +370,11 @@ const EventDetail: React.FC = () => {
               disabled={deleteMutation.isPending}
               className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
-              {deleteMutation.isPending ? <LoadingSpinner size="sm" /> : "Delete"}
+              {deleteMutation.isPending ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                "Delete"
+              )}
             </button>
           </div>
         </div>
