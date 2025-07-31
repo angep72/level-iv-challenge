@@ -16,8 +16,18 @@ const createEventSchema = z.object({
   location: z.string().min(1, "Location is required"),
   price: z.number().min(0, "Price must be 0 or greater"),
   capacity: z.number().min(1, "Capacity must be at least 1"),
-  imageUrl: z.string().min(1, "Image URL is required").url("Must be a valid URL")
+  imageUrl: z
+    .string()
+    .min(1, "Image URL is required")
+    .url("Must be a valid URL"),
 });
+
+const getMinDateTime = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  const localDate = new Date(now.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().slice(0, 16);
+};
 
 type CreateEventFormData = z.infer<typeof createEventSchema>;
 
@@ -84,7 +94,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const onSubmit = (data: CreateEventFormData) => {
     const eventData = {
       ...data,
-      maxCapacity: data.capacity
+      maxCapacity: data.capacity,
     };
     if (isEdit && eventId) {
       updateEventMutation.mutate(eventData);
@@ -145,6 +155,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
             <input
               {...register("date")}
               type="datetime-local"
+              min={getMinDateTime()}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
             />
             {errors.date && (
@@ -223,7 +234,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
             htmlFor="imageUrl"
             className="block text-sm font-medium text-gray-700"
           >
-            Image URL 
+            Image URL
           </label>
           <input
             {...register("imageUrl")}
