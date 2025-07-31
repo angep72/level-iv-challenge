@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Users, DollarSign } from "lucide-react";
+import { Calendar, MapPin, Users} from "lucide-react";
 import { Event } from "../../types";
 
 interface EventCardProps {
@@ -39,7 +39,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             {event.title}
           </h3>
           <div className="flex items-center text-emerald-600 font-semibold">
-            <DollarSign size={16} />
+            
             <span>{event.price === 0 ? "Free" : `$${event.price}`}</span>
           </div>
         </div>

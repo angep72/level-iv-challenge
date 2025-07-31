@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Users, DollarSign, X } from 'lucide-react';
+import { Calendar, MapPin, Users, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { Booking } from '../../types';
@@ -100,8 +100,7 @@ const handleCancel = () => {
           </div>
           
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <DollarSign size={16} />
-            <span>${booking.eventId.price.toFixed(2)}</span>
+                        <span>{booking.eventId.price.toFixed(2)}</span>
           </div>
         </div>
       )}
